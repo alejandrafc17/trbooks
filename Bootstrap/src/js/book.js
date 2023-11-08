@@ -6,7 +6,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         const bookTitle = document.getElementById('title').value;
         const bookAuthor = document.getElementById('author').value;
         const bookGenre = document.getElementById('genre').value;
-        await saveBookRequest({ bookTitle, bookAuthor, bookGenre });
+        const bookprecio = document.getElementById('precio').value;
+        const booknpages = document.getElementById('npages').value;
+        const bookestado = document.getElementById('estado').checked;
+
+        if (!bookTitle || !bookAuthor || !bookGenre || !bookprecio || !booknpages) {
+            alert('Por favor, complete todos los campos antes de guardar el libro.');
+            return;
+        }
+
+        await saveBookRequest({ bookTitle, bookAuthor, bookGenre, bookprecio, booknpages, bookestado });
     });
 
     const updateBookButton = document.getElementById('updateBookButton');
@@ -15,14 +24,29 @@ document.addEventListener('DOMContentLoaded', async function () {
         const bookTitle = document.getElementById('editTitle').value;
         const bookAuthor = document.getElementById('editAuthor').value;
         const bookGenre = document.getElementById('editGenre').value;
-        await updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor });
+        const bookprecio = document.getElementById('editprecio').value;
+        const booknpages = document.getElementById('editnpages').value;
+        const bookestado = document.getElementById('editestado').checked;
+
+        if (!bookTitle || !bookAuthor || !bookGenre || !bookprecio || !booknpages) {
+            alert('Por favor, complete todos los campos antes de actualizar el libro.');
+            return;
+        }
+
+        await updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor, bookprecio, booknpages, bookestado });
     });
 
     const deleteBookButton = document.getElementById('deleteBookButton');
     deleteBookButton.addEventListener('click', async function () {
         const bookId = document.getElementById('deleteBookID').innerHTML;
         await deleteBookRequest(bookId);
-    });
+
+    const detailsBookButtons = document.getElementById('detailsbookbutton');
+    detailsBookButtons.addEventListener('click', async function() {
+        const bookId = button.getElementById('bookDetailsContent');
+        await showBookDetails(bookId);
+            });
+       });
 });
 
 function showBooks(books) {
@@ -34,6 +58,11 @@ function showBooks(books) {
                 <td>${book.title}</td>
                 <td>${book.genre}</td>
                 <td>${book.author}</td>
+                <td>${book.precio}</td>
+                <td>${book.npages}</td>
+                <td>${book.estado ? 'Checked' : 'Unchecked'}</td>
+                
+
                 <td>
                     <button type="button" class="btn btn-outline-success" onclick="editBook('${book.id}', '${book.title}', '${book.genre}', '${book.author}')">
                         <i class="bi bi-pencil"></i> <!-- Ícono de lápiz -->
@@ -42,6 +71,11 @@ function showBooks(books) {
                 <td>
                     <button type="button" class="btn btn-outline-danger" onclick="deleteBook('${book.id}', '${book.title}')">
                         <i class="bi bi-trash"></i> <!-- Ícono de caneca -->
+                    </button>
+                 </td>   
+                <td>    
+                    <button type="button" class="btn btn-outline-primary details-book-button" onclick="bookDetails('${book.id}')">
+                        <i class="bi bi-info"></i> <!-- Ícono de información -->
                     </button>
                 </td>
             </tr>`;
@@ -67,7 +101,7 @@ async function getBooksRequest() {
     }
 }
 
-async function saveBookRequest({ bookTitle, bookAuthor, bookGenre }) {
+async function saveBookRequest({ bookTitle, bookAuthor, bookGenre, bookprecio, booknpages, bookestado }) {
     try {
         let request = await fetch('http://localhost:3000/books', {
             method: 'POST',
@@ -77,7 +111,10 @@ async function saveBookRequest({ bookTitle, bookAuthor, bookGenre }) {
             body: JSON.stringify({
                 title: bookTitle,
                 author: bookAuthor,
-                genre: bookGenre
+                genre: bookGenre,
+                precio: bookprecio,
+                npages: booknpages,
+                estado: bookestado
             })
         });
         let data = await request.json();
@@ -94,7 +131,7 @@ async function saveBookRequest({ bookTitle, bookAuthor, bookGenre }) {
     }
 }
 
-async function updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor }) {
+async function updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor, bookprecio, booknpages, bookestado }) {
     try {
         let request = await fetch(`http://localhost:3000/books/${bookID}`, {
             method: 'PUT',
@@ -104,7 +141,10 @@ async function updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor }) {
             body: JSON.stringify({
                 title: bookTitle,
                 author: bookAuthor,
-                genre: bookGenre
+                genre: bookGenre,
+                precio: bookprecio,
+                npages: booknpages,
+                estado: bookestado
             })
         });
         const data = await request.json();
@@ -121,11 +161,14 @@ async function updateBookRequest({ bookID, bookTitle, bookGenre, bookAuthor }) {
     }
 }
 
-function editBook(id, title, genre, author) {
+function editBook(id, title, genre, author, precio, npages, estado) {
     document.getElementById('editBookId').value = id;
     document.getElementById('editTitle').value = title;
     document.getElementById('editGenre').value = genre;
     document.getElementById('editAuthor').value = author;
+    document.getElementById('editprecio').value = precio;
+    document.getElementById('editnpages').value = npages;
+    document.getElementById('editestado').checked = estado;
     showModal('editBookModal');
 }
 
@@ -149,6 +192,53 @@ async function deleteBookRequest(id) {
             alert('Eliminación fallida del libro');
         }
     } catch (error) {
+        alert('ERROR');
+    }
+}
+
+
+
+function showBook(book) {
+    const bookDetailsContent = document.getElementById('detalle');
+    bookDetailsContent.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3" style="max-width: 440px;">
+                    <div class="row g-0 h-100 w-100">
+                        <div class="col-md-4">
+                        <img src="${book.imgURL}" class="img-fluid rounded-start h-100 w-100" alt="${book.title}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${book.title}</h5>
+                                <p class="card-text">${book.author}</p>
+                                <p class="card-text"><small class="text-muted">${book.genre}</small></p>
+                                <p class="card-text"><small class="text-muted">${book.precio}</small></p>
+                                <p class="card-text"><small class="text-muted">${book.npages}</small></p>
+                                <p class="card-text"><small class="text-muted">${book.estado}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+async function bookDetails(id) {
+    try {
+        let request = await fetch(`http://localhost:3000/books/${id}`, {
+            method: 'GET'
+        });
+        let data = await request.json();
+        if (data.ok) {
+            alert('Book GET successfully');
+            showBook(data.book);
+            showModal('bookDetailsModal');
+        } else {
+            alert('Failed book GETING');
+        }
+    } catch (error) {
+        console.log(error);
         alert('ERROR');
     }
 }
